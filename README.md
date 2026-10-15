@@ -11,6 +11,22 @@ PR 3 ❌1
  ✅ ⚠️  #401 chore: bump deps          → 🔀 Resolve conflicts (push)
 ```
 
+## Screenshots
+
+| Grouped by repo, with magic mode one click away | Fix CI / Triage comments per PR |
+|---|---|
+| ![Menu grouped by repo](docs/images/menu-magic-mode.png) | ![Per-PR actions](docs/images/submenu-actions.png) |
+
+| A fix running (⏳), live in the menu bar | Same list, magic mode off |
+|---|---|
+| ![Fix running](docs/images/menubar-fix-running.png) | ![Grouped menu](docs/images/menu-grouped.png) |
+
+| Triage report ready | Magic mode switched off |
+|---|---|
+| ![Triage notification](docs/images/notification-triage.png) | ![Magic mode off](docs/images/notification-magic-off.png) |
+
+*Repo and PR names in the screenshots are placeholders.*
+
 ## What it shows
 
 | Icon | Meaning |
