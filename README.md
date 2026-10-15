@@ -38,6 +38,20 @@ Fix actions run Claude headless (`claude -p`) with `acceptEdits` and a tool allo
 brew install --cask swiftbar && brew install gh jq terminal-notifier
 ```
 
+## 🪄 Magic mode
+
+Opt-in autopilot. When on, pr-bar fixes your PRs' merge conflicts and failing CI **by itself**, one PR at a time, until they pass, and **pushes** the fixes. Turn it on from the menu (**🪄 Enable magic mode**, confirmed with a Yes / No dialog). It is never on by default.
+
+- **One at a time:** a global lock means a single PR is being worked on at any moment, and it waits if you started a manual fix.
+- **Until green:** it picks conflicts first, then failing CI. After a push it waits for CI, and if CI fails again it tries again. A PR that turns clean resets its budget.
+- **Bounded:** at most 3 attempts per PR (`PRBAR_MAGIC_MAX_ATTEMPTS`). If Claude decides a fix isn't safe (flaky, ambiguous), it does not push, remembers that commit, and notifies you instead of retrying forever.
+- **Never touches comments:** review feedback stays yours.
+- **Skips drafts** and only works on the configured `PRBAR_FIX_REPO`.
+- **Self-expiring:** turns itself off after 8 hours (`PRBAR_MAGIC_HOURS`) and doesn't survive being disabled. Turn it off any time from the menu.
+- **Watchable:** the menu shows the current status (`🪄 fixing #123 (ci), attempt 1/3`), and **Watch magic log** tails what it is doing. Each run is saved in `~/.pr-bar/logs/`.
+
+It runs as a per-user LaunchAgent (`com.pr-bar.magic`, checks every 2 min), created when you enable it and removed when you disable it, so it keeps working when the menu bar app is closed.
+
 ## Install
 
 One line (needs [`gh`](https://cli.github.com) logged in; it installs SwiftBar, `jq` and `terminal-notifier` via Homebrew, wires everything up and starts SwiftBar):

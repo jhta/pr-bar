@@ -17,3 +17,8 @@ PRBAR_REPO_CHECKOUT="$HOME/projects/my-app"
 
 # Optional: how Claude should format commit messages.
 # PRBAR_COMMIT_HINT="the message format '{type}: [{TICKET}] {description}' (ticket from the branch name)"
+
+# Magic mode (off unless you enable it from the menu): auto-fixes conflicts and failing CI, one PR at a time.
+# PRBAR_MAGIC_MAX_ATTEMPTS=3   # attempts per PR before it gives up and notifies you
+# PRBAR_MAGIC_HOURS=8          # auto turns itself off after this many hours
+# PRBAR_MAGIC_INTERVAL=120     # seconds between checks

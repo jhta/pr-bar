@@ -12,12 +12,17 @@ Q='query { search(query: "is:pr is:open author:@me archived:false '"$PRBAR_SEARC
 
 data=$(gh api graphql -f query="$Q" 2>&1) || { echo "PR ⚠️"; echo "---"; echo "gh failed: ${data:0:120}"; exit 0; }
 
+magic=""
+if [ -f "$STATE/magic/enabled" ] && [ "$(cat "$STATE/magic/enabled")" -gt "$(date +%s)" ]; then
+  magic="until $(date -r "$(cat "$STATE/magic/enabled")" +%H:%M)"
+fi
+magic_status=$(cat "$STATE/magic/status" 2>/dev/null)
 running=$(ls "$STATE/running" 2>/dev/null | jq -R . | jq -sc .)
 
-echo "$data" | jq -r --arg fix "$FIX" --arg merge "$MERGE" --arg fixrepo "$FIX_REPO" --arg st "$STATE" --argjson running "$running" '
+echo "$data" | jq -r --arg fix "$FIX" --arg merge "$MERGE" --arg fixrepo "$FIX_REPO" --arg st "$STATE" --arg magic "$magic" --arg mstatus "$magic_status" --arg magicsh "$ROOT/bin/magic.sh" --argjson running "$running" '
   [.data.search.nodes[] | select(.number)] as $prs
   | ($prs | map(select(.commits.nodes[0].commit.statusCheckRollup.state | IN("FAILURE","ERROR"))) | length) as $failing
-  | "PR \($prs|length)\(if $failing>0 then " ❌\($failing)" else "" end)",
+  | "\(if $magic != "" then "🪄 " else "" end)PR \($prs|length)\(if $failing>0 then " ❌\($failing)" else "" end)",
   ( ($prs | group_by(.repository.nameWithOwner) | sort_by(if .[0].repository.nameWithOwner == $fixrepo then 0 else 1 end))[] as $g
     | "---",
       "\($g[0].repository.nameWithOwner) · \($g|length)\(($g | map(select(.commits.nodes[0].commit.statusCheckRollup.state | IN("FAILURE","ERROR"))) | length) as $f | if $f>0 then "  ❌\($f)" else "" end) | size=12 color=#8e8e93 href=https://github.com/\($g[0].repository.nameWithOwner)/pulls",
@@ -40,5 +45,13 @@ echo "$data" | jq -r --arg fix "$FIX" --arg merge "$MERGE" --arg fixrepo "$FIX_R
        "--Latest log | bash=/usr/bin/open param1=\($st)/logs terminal=false"
      else "--Open PR | href=\(.url)" end)
   )),
-  "---", "Refresh | refresh=true", "Logs | bash=/usr/bin/open param1=\($st)/logs terminal=false"
+  "---",
+  (if $magic != "" then
+     "🪄 Magic mode ON \($magic): turn off | bash=\($magicsh) param1=off terminal=false refresh=true",
+     (if $mstatus != "" then "--\($mstatus) | disabled=true" else empty end),
+     "--Watch magic log | bash=/usr/bin/tail param1=-f param2=\($st)/logs/magic.log terminal=true"
+   else
+     "🪄 Enable magic mode (auto-fix conflicts and CI, pushes!) | bash=\($magicsh) param1=on terminal=false refresh=true"
+   end),
+  "Refresh | refresh=true", "Logs | bash=/usr/bin/open param1=\($st)/logs terminal=false"
 '
