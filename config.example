@@ -1,0 +1,19 @@
+# Copy to ~/.pr-bar/config (this file is read from there, never committed).
+
+# Extra GitHub search qualifiers appended to "is:pr is:open author:@me".
+# Examples: "org:my-company"   "user:my-login"   "repo:owner/name"
+PRBAR_SEARCH_EXTRA="org:my-company"
+
+# Fix actions (Fix CI / Resolve conflicts / Triage comments) are offered only for this repo,
+# because they need a local checkout to create worktrees from.
+PRBAR_FIX_REPO="my-company/my-app"
+PRBAR_REPO_CHECKOUT="$HOME/projects/my-app"
+
+# Optional: run inside a fresh worktree when node_modules is missing.
+# PRBAR_SETUP_CMD="yarn install --immutable"
+
+# Optional: rules appended to every Claude prompt.
+# PRBAR_EXTRA_RULES="Never start the dev server. Do not run mutation tests."
+
+# Optional: how Claude should format commit messages.
+# PRBAR_COMMIT_HINT="the message format '{type}: [{TICKET}] {description}' (ticket from the branch name)"
