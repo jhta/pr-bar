@@ -54,10 +54,10 @@ It runs as a per-user LaunchAgent (`com.pr-bar.magic`, checks every 2 min), crea
 
 ## Install
 
-One line (needs [`gh`](https://cli.github.com) logged in; it installs SwiftBar, `jq` and `terminal-notifier` via Homebrew, wires everything up and starts SwiftBar):
+One line (needs [Homebrew](https://brew.sh) and `gh auth login` done once). It installs `gh`, `jq`, `terminal-notifier` and SwiftBar, then wires everything up and starts SwiftBar:
 
 ```bash
-gh api repos/jhta/pr-bar/contents/install.sh -H "Accept: application/vnd.github.raw" | zsh
+brew install gh jq terminal-notifier && brew install --cask swiftbar && gh api repos/jhta/pr-bar/contents/install.sh -H "Accept: application/vnd.github.raw" | zsh
 ```
 
 Then edit `~/.pr-bar/config` (see below) and click **Refresh** in the menu bar.

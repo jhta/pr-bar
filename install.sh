@@ -1,7 +1,7 @@
 #!/bin/zsh
 # pr-bar installer / updater. Safe to re-run.
 #   One line (works while the repo is private, needs `gh` logged in):
-#     gh api repos/jhta/pr-bar/contents/install.sh -H "Accept: application/vnd.github.raw" | zsh
+#     brew install gh jq terminal-notifier && brew install --cask swiftbar && gh api repos/jhta/pr-bar/contents/install.sh -H "Accept: application/vnd.github.raw" | zsh
 set -e
 SRC="$HOME/.pr-bar/src"
 HERE=${0:A:h}
