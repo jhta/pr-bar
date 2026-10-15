@@ -40,13 +40,24 @@ brew install --cask swiftbar && brew install gh jq terminal-notifier
 
 ## Install
 
+One line (needs [`gh`](https://cli.github.com) logged in; it installs SwiftBar, `jq` and `terminal-notifier` via Homebrew, wires everything up and starts SwiftBar):
+
 ```bash
-git clone https://github.com/jhta/pr-bar && cd pr-bar
-./install.sh              # symlinks the plugin into ~/SwiftBar, creates ~/.pr-bar/config
-$EDITOR ~/.pr-bar/config  # point it at your org and repo checkout
+gh api repos/jhta/pr-bar/contents/install.sh -H "Accept: application/vnd.github.raw" | zsh
 ```
 
-Then open SwiftBar and set its plugin folder to `~/SwiftBar`. The list refreshes every 2 minutes (rename `prs.2m.sh` to change that).
+Then edit `~/.pr-bar/config` (see below) and click **Refresh** in the menu bar.
+
+**Update:** run the same line again. It pulls the latest version and keeps your config.
+
+**Refresh rate:** the list refreshes **every 2 minutes**, and a manual **Refresh** item sits at the bottom of the menu. The interval comes from the plugin filename (`prs.2m.sh`); rename the symlink in `~/SwiftBar` to `prs.30s.sh`, `prs.5m.sh`, etc. to change it. Mind the GitHub API rate limit if you go very low.
+
+<details><summary>Manual install</summary>
+
+```bash
+git clone https://github.com/jhta/pr-bar ~/.pr-bar/src && ~/.pr-bar/src/install.sh
+```
+</details>
 
 ## Configuration
 
