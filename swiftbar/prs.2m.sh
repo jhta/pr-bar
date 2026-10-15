@@ -17,8 +17,11 @@ running=$(ls "$STATE/running" 2>/dev/null | jq -R . | jq -sc .)
 echo "$data" | jq -r --arg fix "$FIX" --arg merge "$MERGE" --arg fixrepo "$FIX_REPO" --arg st "$STATE" --argjson running "$running" '
   [.data.search.nodes[] | select(.number)] as $prs
   | ($prs | map(select(.commits.nodes[0].commit.statusCheckRollup.state | IN("FAILURE","ERROR"))) | length) as $failing
-  | "PR \($prs|length)\(if $failing>0 then " ❌\($failing)" else "" end)", "---",
-  ( $prs[] |
+  | "PR \($prs|length)\(if $failing>0 then " ❌\($failing)" else "" end)",
+  ( ($prs | group_by(.repository.nameWithOwner) | sort_by(if .[0].repository.nameWithOwner == $fixrepo then 0 else 1 end))[] as $g
+    | "---",
+      "\($g[0].repository.nameWithOwner) · \($g|length)\(($g | map(select(.commits.nodes[0].commit.statusCheckRollup.state | IN("FAILURE","ERROR"))) | length) as $f | if $f>0 then "  ❌\($f)" else "" end) | size=12 color=#8e8e93 href=https://github.com/\($g[0].repository.nameWithOwner)/pulls",
+    ( $g[] |
     (.commits.nodes[0].commit.statusCheckRollup.state // "NONE") as $ci
     | ([.reviewThreads.nodes[] | select(.isResolved|not)] | length) as $unres
     | (.mergeable == "CONFLICTING") as $conf
@@ -36,6 +39,6 @@ echo "$data" | jq -r --arg fix "$FIX" --arg merge "$MERGE" --arg fixrepo "$FIX_R
        "--Open PR | href=\(.url)",
        "--Latest log | bash=/usr/bin/open param1=\($st)/logs terminal=false"
      else "--Open PR | href=\(.url)" end)
-  ),
+  )),
   "---", "Refresh | refresh=true", "Logs | bash=/usr/bin/open param1=\($st)/logs terminal=false"
 '
