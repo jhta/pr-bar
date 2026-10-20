@@ -7,6 +7,7 @@ PRBAR_STATE="${PRBAR_STATE:-$HOME/.pr-bar}"
 : "${PRBAR_FIX_REPO:=}"          # owner/repo that fix actions are enabled for
 : "${PRBAR_REPO_CHECKOUT:=}"     # local path of that repo's main checkout
 : "${PRBAR_SETUP_CMD:=}"         # run in a fresh worktree when node_modules is missing
+: "${PRBAR_IGNORE_CHECKS:=}"     # comma-separated non-blocking check names: never shown as failing, never "fixed"
 : "${PRBAR_EXTRA_RULES:=}"       # extra rules appended to every Claude prompt
 : "${PRBAR_COMMIT_HINT:=a conventional commit message}"
 : "${PRBAR_MAGIC_MAX_ATTEMPTS:=3}"  # magic mode: fix attempts per PR before it gives up and pings you

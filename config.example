@@ -22,3 +22,7 @@ PRBAR_REPO_CHECKOUT="$HOME/projects/my-app"
 # PRBAR_MAGIC_MAX_ATTEMPTS=3   # attempts per PR before it gives up and notifies you
 # PRBAR_MAGIC_HOURS=8          # auto turns itself off after this many hours
 # PRBAR_MAGIC_INTERVAL=120     # seconds between checks
+
+# Non-blocking checks: comma-separated names (case-insensitive). A PR failing only these is not shown as failing,
+# magic mode skips it, and Fix CI is told to ignore them.
+# PRBAR_IGNORE_CHECKS="Mutation testing gate,SonarCloud Code Analysis"

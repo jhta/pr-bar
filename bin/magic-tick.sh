@@ -28,7 +28,7 @@ echo $$ > "$lock/pid"; trap 'rm -rf "$lock"' EXIT HUP INT TERM
 
 Q='query { search(query: "is:pr is:open author:@me archived:false repo:'"$PRBAR_FIX_REPO"'", type: ISSUE, first: 50) { nodes { ... on PullRequest {
   number headRefName headRefOid isDraft mergeable
-  commits(last: 1) { nodes { commit { statusCheckRollup { state } } } } } } } }'
+  commits(last: 1) { nodes { commit { statusCheckRollup { state contexts(first: 100) { totalCount nodes { ... on CheckRun { name conclusion status } ... on StatusContext { context state } } } } } } } } } } }'
 data=$(gh api graphql -f query="$Q" 2>&1) || { say "gh failed: ${data:0:150}"; exit 1; }
 
 pick=""
@@ -43,10 +43,10 @@ while IFS=$'\t' read -r n branch sha need; do
     continue
   fi
   [ -z "$pick" ] && pick="$n $branch $sha $need $count"
-done < <(print -r -- "$data" | jq -r '.data.search.nodes[] | select(.number and (.isDraft|not)) |
+done < <(print -r -- "$data" | jq -r --arg ignore "$PRBAR_IGNORE_CHECKS" "$(<"${0:A:h}/ci-state.jq")"'.data.search.nodes[] | select(.number and (.isDraft|not)) |
   [.number, .headRefName, .headRefOid,
    (if .mergeable=="CONFLICTING" then "conflicts"
-    elif (.commits.nodes[0].commit.statusCheckRollup.state // "") | IN("FAILURE","ERROR") then "ci"
+    elif ci_state($ignore) | IN("FAILURE","ERROR") then "ci"
     else "none" end)] | @tsv')
 
 if [ -z "$pick" ]; then status "🪄 all clear $(date +%H:%M)"; say "nothing to do"; exit 0; fi
