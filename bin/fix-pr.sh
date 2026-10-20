@@ -75,4 +75,5 @@ if [ $rc -ne 0 ]; then notify "Claude failed (exit $rc). See log." "$log"; exit 
 summary=$(print -r -- "$out" | tail -n 4 | tr '\n' ' ' | cut -c1-220)
 if [ "$mode" = comments ]; then notify "Triage ready: $summary" "$report"; else notify "$summary" "https://github.com/$repo/pull/$pr"; fi
 
+rm -f "$lock"   # release the ⏳ marker before waiting on the keypress
 if [ -t 1 ]; then read -k1 "?Press any key to close…"; fi
