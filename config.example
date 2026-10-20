@@ -10,7 +10,7 @@ PRBAR_FIX_REPO="my-company/my-app"
 PRBAR_REPO_CHECKOUT="$HOME/projects/my-app"
 
 # Optional: run inside a fresh worktree when node_modules is missing.
-# PRBAR_SETUP_CMD="yarn install --immutable"
+# PRBAR_SETUP_CMD="yarn install --immutable"   # call the script directly: a bare `yarn <script>` fails in a fresh yarn 4 worktree
 
 # Optional: rules appended to every Claude prompt.
 # PRBAR_EXTRA_RULES="Never start the dev server. Do not run mutation tests."

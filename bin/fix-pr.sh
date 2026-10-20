@@ -16,14 +16,26 @@ trap 'rm -f "$lock"' EXIT HUP INT TERM
 
 notify() { terminal-notifier -title "PR #$pr ($mode)" -message "$1" ${2:+-open "$2"} -group "pr-bar-$pr" >/dev/null 2>&1 }
 
-# Reuse an existing worktree for this branch, else create a sibling one
+# Work only in a separate git worktree, never in the main checkout.
 wt=$(git -C "$MAIN" worktree list --porcelain | awk -v b="refs/heads/$branch" '/^worktree /{p=$2} $1=="branch" && $2==b {print p}')
 if [ -z "$wt" ]; then
   wt="$MAIN-pr$pr"
   git -C "$MAIN" fetch origin "$branch" >>"$log" 2>&1
-  git -C "$MAIN" worktree add -B "$branch" "$wt" "origin/$branch" >>"$log" 2>&1 || { notify "Could not create worktree (see log)" "$log"; exit 1; }
+  if git -C "$MAIN" show-ref --verify --quiet "refs/heads/$branch"; then
+    git -C "$MAIN" worktree add "$wt" "$branch" >>"$log" 2>&1 && git -C "$wt" merge --ff-only "origin/$branch" >>"$log" 2>&1
+  else
+    git -C "$MAIN" worktree add --track -b "$branch" "$wt" "origin/$branch" >>"$log" 2>&1
+  fi || { notify "Could not create worktree (see log)" "$log"; exit 1; }
 fi
 cd "$wt" || exit 1
+if [ "$(git rev-parse --show-toplevel)" = "${MAIN:A}" ]; then
+  echo "✖ $branch is checked out in your main checkout; switch it to another branch first so fixes stay out of it."
+  notify "Refused: $branch is checked out in the main checkout" ; exit 1
+fi
+if [ "$mode" != comments ] && [ -n "$(git status --porcelain)" ]; then
+  echo "✖ $wt has uncommitted changes (yours?); commit or stash them first."
+  notify "Refused: $wt has uncommitted changes" ; exit 1
+fi
 echo "▶ $mode · PR #$pr · $branch\n  worktree: $wt\n"
 if [ -n "$PRBAR_SETUP_CMD" ] && [ ! -d node_modules ]; then
   echo "→ $PRBAR_SETUP_CMD"; eval "$PRBAR_SETUP_CMD" 2>&1 | tee -a "$log"
@@ -38,16 +50,22 @@ case $mode in
   *) exit 2 ;;
 esac
 
+# The rtk hook (if installed) rewrites git/grep/ls/tsc to "rtk …", so both forms are allowed.
+# rtk run / proxy / err (arbitrary commands) are deliberately not.
+read_tools=(Read Grep Glob "Bash(gh:*)" "Bash(rtk gh:*)" "Bash(rtk git log:*)" "Bash(rtk git diff:*)" "Bash(git log:*)" "Bash(git diff:*)"
+  "Bash(rtk grep:*)" "Bash(rtk ls:*)" "Bash(rtk find:*)" "Bash(rtk read:*)" "Bash(grep:*)" "Bash(ls:*)" "Bash(pwd)" "Bash(head:*)" "Bash(tail:*)" "Bash(wc:*)" "Bash(cat:*)")
 case $mode in
-  comments) tools=(Read Grep Glob Write "Bash(gh:*)" "Bash(git log:*)" "Bash(git diff:*)") ;;
-  *)        tools=(Read Grep Glob Edit Write "Bash(git:*)" "Bash(gh:*)" "Bash(yarn:*)" "Bash(npm:*)" "Bash(npx:*)") ;;
+  comments) tools=($read_tools Write) ;;
+  *)        tools=($read_tools Edit Write "Bash(git:*)" "Bash(rtk git:*)" "Bash(yarn:*)" "Bash(npm:*)" "Bash(rtk npm:*)" "Bash(npx:*)" "Bash(rtk npx:*)"
+              "Bash(rtk tsc:*)" "Bash(rtk lint:*)" "Bash(rtk jest:*)" "Bash(rtk diff:*)" "Bash(rtk wc:*)" "Bash(rtk prettier:*)" "Bash(echo:*)") ;;
 esac
+denied=("Bash(*--force*)" "Bash(*--no-verify*)" "Bash(* -f *)")
 
 filter='if .type=="assistant" then (.message.content[]? | if .type=="text" then "\n💭 "+.text elif .type=="tool_use" then "🔧 "+.name+" "+((.input.command // .input.file_path // .input.pattern // .input.description // "")|tostring|.[0:200]) else empty end)
   elif .type=="user" then (.message.content[]? | select(.type=="tool_result") | "   ↳ "+((.content // "")|if type=="array" then map(.text // "")|join(" ") else tostring end|gsub("\n";" ")|.[0:160]))
   else empty end'
 echo "→ claude is working (live)…\n"
-claude -p "$prompt" --verbose --output-format stream-json --permission-mode acceptEdits --allowedTools "${tools[@]}" 2>>"$log" | tee "$raw" | jq -rR --unbuffered "fromjson? | $filter"
+claude -p "$prompt" --verbose --output-format stream-json --permission-mode acceptEdits --allowedTools "${tools[@]}" --disallowedTools "${denied[@]}" 2>>"$log" | tee "$raw" | jq -rR --unbuffered "fromjson? | $filter"
 rc=${pipestatus[1]}
 out=$(jq -r 'select(.type=="result").result // empty' "$raw")
 print -r -- "$out" >> "$log"
